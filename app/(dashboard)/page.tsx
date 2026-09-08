@@ -1,11 +1,10 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { logout } from '../(auth)/actions'
 
 /**
- * 대시보드(홈) — 보호된 페이지.
+ * 대시보드(홈).
  *
- * Module 3까지는 인증 흐름 확인용 최소 화면이다.
- * 실제 대시보드 지표(오늘 출석 수, 만료임박 회원 등)는 Module 7에서 구현한다.
+ * 실제 지표(오늘 출석 수, 만료임박 회원 등)는 Module 7에서 구현한다.
  */
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -13,44 +12,36 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const { count } = await supabase
+    .from('members')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'active')
+
   return (
-    <main className="mx-auto w-full max-w-2xl p-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">피지컬그라운드 회원관리</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            보호된 페이지입니다. 로그인한 직원만 볼 수 있습니다.
+    <main>
+      <h1 className="text-xl font-bold text-gray-900">대시보드</h1>
+      <p className="mt-1 text-sm text-gray-500">
+        {user?.email} 님으로 로그인되어 있습니다.
+      </p>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/members"
+          className="rounded-lg border border-gray-200 bg-white p-5 transition hover:border-gray-400"
+        >
+          <p className="text-sm text-gray-500">활성 회원</p>
+          <p data-testid="active-member-count" className="mt-1 text-2xl font-bold text-gray-900">
+            {count ?? 0}명
+          </p>
+          <p className="mt-2 text-xs text-gray-400">회원 관리로 이동 →</p>
+        </Link>
+
+        <div className="rounded-lg border border-dashed border-gray-300 p-5">
+          <p className="text-sm text-gray-400">
+            오늘 출석 수, 회원권 만료임박 목록 등은 Module 7에서 추가됩니다.
           </p>
         </div>
-
-        <form action={logout}>
-          <button
-            type="submit"
-            data-testid="logout-button"
-            className="shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-          >
-            로그아웃
-          </button>
-        </form>
       </div>
-
-      <div className="mt-6 rounded-lg border border-gray-200 p-4">
-        <h2 className="text-sm font-semibold text-gray-700">현재 세션</h2>
-        <dl className="mt-2 space-y-1 text-sm">
-          <div className="flex gap-2">
-            <dt className="w-20 shrink-0 text-gray-500">이메일</dt>
-            <dd data-testid="user-email">{user?.email ?? '-'}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="w-20 shrink-0 text-gray-500">사용자 ID</dt>
-            <dd className="break-all font-mono text-xs">{user?.id ?? '-'}</dd>
-          </div>
-        </dl>
-      </div>
-
-      <p className="mt-6 text-xs text-gray-400">
-        Module 3 (인증 화면) 확인용 화면 · 실제 대시보드는 Module 7에서 구현 예정
-      </p>
     </main>
   )
 }

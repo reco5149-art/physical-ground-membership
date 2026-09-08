@@ -30,5 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "//exclude": "테스트 파일은 Node 내장 test runner(--test)로 실행되며, 타입 스트리핑 특성상 import 경로에 .ts 확장자가 필요하다. Next 빌드의 타입체크와는 규칙이 달라 빌드 대상에서 제외한다. 테스트 자체의 타입 검증은 tsconfig.test.json으로 별도 수행한다.",
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx"]
 }
