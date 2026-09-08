@@ -1,23 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-/** 로그인 없이 접근 가능한 경로 (그 외 모든 경로는 로그인 필요) */
+/**
+ * 로그인 없이 접근 가능한 경로 (그 외 모든 경로는 로그인 필요)
+ * - /login, /signup : 인증 화면
+ * - /auth           : 가입 확인 메일 링크가 돌아오는 곳 (/auth/confirm)
+ */
 const PUBLIC_PATHS = ['/login', '/signup', '/auth']
 
-/**
- * 개발 환경에서만 공개인 경로.
- * `/api/dev-session`은 로그인 화면이 없는 Module 2에서 인증 가드를 테스트하기 위한
- * 임시 라우트이며, 라우트 자체도 프로덕션에서는 404를 반환한다. (Module 3에서 삭제)
- */
-const DEV_ONLY_PUBLIC_PATHS = ['/api/dev-session']
-
 function isPublicPath(pathname: string) {
-  const publicPaths =
-    process.env.NODE_ENV === 'production'
-      ? PUBLIC_PATHS
-      : [...PUBLIC_PATHS, ...DEV_ONLY_PUBLIC_PATHS]
-
-  return publicPaths.some(
+  return PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   )
 }
