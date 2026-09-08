@@ -177,7 +177,7 @@ docs/PRD.md, docs/TECH_SPEC.md, docs/TASK_BREAKDOWN.md 의 Module <번호>,
 |---|---|---|---|
 | 0 | 프로젝트 초기 셋업 | 완료 | [HANDOFF_00](./handoff/HANDOFF_00_project-setup.md) |
 | 1 | Supabase 프로젝트 & DB 스키마 | 완료 | [HANDOFF_01](./handoff/HANDOFF_01_supabase-db-schema.md) |
-| 2 | Next.js ↔ Supabase 연동 & 인증 가드 | 대기 | - |
+| 2 | Next.js ↔ Supabase 연동 & 인증 가드 | 완료 | [HANDOFF_02](./handoff/HANDOFF_02_supabase-auth-guard.md) |
 | 3 | 회원가입/로그인 화면 | 대기 | - |
 | 4 | 회원 CRUD | 대기 | - |
 | 5 | 회원권 등록 및 상태 계산 | 대기 | - |
