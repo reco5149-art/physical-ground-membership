@@ -146,7 +146,8 @@ docs/PRD.md, docs/TECH_SPEC.md, docs/TASK_BREAKDOWN.md 의 Module <번호>,
 - **산출물**: `/attendance` 페이지, 체크인 처리 로직(원자적 차감을 위한 Postgres 함수 또는 트랜잭션)
 - **테스트 방법**:
   1. 목업 회원/회원권 데이터로 체크인 UI 흐름 확인.
-  2. 실제 DB 연결 후: 같은 회원을 하루에 두 번 체크인 시도 → 두 번째는 경고 처리되는지 확인. 횟수제 회원권 체크인 후 `remaining_count`가 정확히 1 감소하는지 확인.
+  2. 실제 DB 연결 후: 같은 회원을 하루에 두 번 체크인 시도 → 두 번째는 경고 처리되는지 확인.
+- **⚠️ 요금제 확정에 따른 변경 (Module 5에서 반영)**: 현재 운영 요금제 4종은 모두 기간제라 **횟수 차감은 해당 없음**. 대신 **주간 횟수 초과 경고**를 구현한다 — 이번 주(월~일) 출석 수가 회원권의 `sessions_per_week` 이상이면 경고를 표시하되 **체크인은 허용**한다(사용자 확정 정책). 자세한 내용: [HANDOFF_05](./handoff/HANDOFF_05_membership-plans.md)
 
 ### Module 7 — 대시보드
 
@@ -180,8 +181,8 @@ docs/PRD.md, docs/TECH_SPEC.md, docs/TASK_BREAKDOWN.md 의 Module <번호>,
 | 1 | Supabase 프로젝트 & DB 스키마 | 완료 | [HANDOFF_01](./handoff/HANDOFF_01_supabase-db-schema.md) |
 | 2 | Next.js ↔ Supabase 연동 & 인증 가드 | 완료 | [HANDOFF_02](./handoff/HANDOFF_02_supabase-auth-guard.md) |
 | 3 | 회원가입/로그인 화면 | 완료 (확인메일 실수신 테스트는 M8 이월) | [HANDOFF_03](./handoff/HANDOFF_03_auth-screens.md) |
-| 4 | 회원 CRUD | 대기 | - |
-| 5 | 회원권 등록 및 상태 계산 | 대기 | - |
+| 4 | 회원 CRUD | 완료 | [HANDOFF_04](./handoff/HANDOFF_04_member-crud.md) |
+| 5 | 회원권 등록 및 상태 계산 | 완료 | [HANDOFF_05](./handoff/HANDOFF_05_membership-plans.md) |
 | 6 | 출석 체크 & 횟수 차감 | 대기 | - |
 | 7 | 대시보드 | 대기 | - |
 | 8 | 보안 체크리스트 적용 | 대기 | - |
