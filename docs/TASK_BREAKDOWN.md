@@ -183,7 +183,7 @@ docs/PRD.md, docs/TECH_SPEC.md, docs/TASK_BREAKDOWN.md 의 Module <번호>,
 | 3 | 회원가입/로그인 화면 | 완료 (확인메일 실수신 테스트는 M8 이월) | [HANDOFF_03](./handoff/HANDOFF_03_auth-screens.md) |
 | 4 | 회원 CRUD | 완료 | [HANDOFF_04](./handoff/HANDOFF_04_member-crud.md) |
 | 5 | 회원권 등록 및 상태 계산 | 완료 | [HANDOFF_05](./handoff/HANDOFF_05_membership-plans.md) |
-| 6 | 출석 체크 & 횟수 차감 | 대기 | - |
+| 6 | 출석 체크 & 주간 횟수 경고 | 완료 | [HANDOFF_06](./handoff/HANDOFF_06_attendance.md) |
 | 7 | 대시보드 | 대기 | - |
 | 8 | 보안 체크리스트 적용 | 대기 | - |
 | 9 | 배포 마무리 & 운영 준비 | 대기 | - |
