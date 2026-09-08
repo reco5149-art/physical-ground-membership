@@ -162,6 +162,7 @@ docs/PRD.md, docs/TECH_SPEC.md, docs/TASK_BREAKDOWN.md 의 Module <번호>,
 - **산출물**: Supabase 대시보드 설정 변경(이메일 확인, SMTP, 비밀번호 정책, CAPTCHA), 코드 레벨 rate limit 적용
 - **테스트 방법**: 8.9절 체크리스트 표의 각 행을 실제로 확인하며 완료 표시. 특히 가입 → 확인 메일 수신 → 링크 클릭, 유출된 비밀번호로 가입 시도 시 차단되는지, CAPTCHA 없이 API 직접 호출 시 막히는지를 직접 테스트한다.
 - **주의**: 일부 항목(도메인/HTTPS, Site URL)은 커스텀 도메인이 정해진 이후(Module 9와 맞물림)에만 최종 확정 가능하므로, 이 모듈에서는 우선 배포 도메인(Vercel 기본 도메인) 기준으로 설정하고 Module 9에서 재확인한다.
+- **⚠️ Module 3에서 이월된 필수 항목**: Supabase 내장 메일은 시간당 발송 한도(2~3통) 때문에 가입이 실패·롤백된다. **커스텀 SMTP를 붙인 직후, "가입 → 확인 메일 수신 → 링크 클릭 → 로그인"의 해피패스를 실제 메일로 반드시 1회 검증할 것.** 이 검증 전에는 실사용자 오픈 금지. (자세한 내용: [HANDOFF_03](./handoff/HANDOFF_03_auth-screens.md))
 
 ### Module 9 — 배포 마무리 & 운영 준비
 
@@ -178,7 +179,7 @@ docs/PRD.md, docs/TECH_SPEC.md, docs/TASK_BREAKDOWN.md 의 Module <번호>,
 | 0 | 프로젝트 초기 셋업 | 완료 | [HANDOFF_00](./handoff/HANDOFF_00_project-setup.md) |
 | 1 | Supabase 프로젝트 & DB 스키마 | 완료 | [HANDOFF_01](./handoff/HANDOFF_01_supabase-db-schema.md) |
 | 2 | Next.js ↔ Supabase 연동 & 인증 가드 | 완료 | [HANDOFF_02](./handoff/HANDOFF_02_supabase-auth-guard.md) |
-| 3 | 회원가입/로그인 화면 | 대기 | - |
+| 3 | 회원가입/로그인 화면 | 완료 (확인메일 실수신 테스트는 M8 이월) | [HANDOFF_03](./handoff/HANDOFF_03_auth-screens.md) |
 | 4 | 회원 CRUD | 대기 | - |
 | 5 | 회원권 등록 및 상태 계산 | 대기 | - |
 | 6 | 출석 체크 & 횟수 차감 | 대기 | - |
