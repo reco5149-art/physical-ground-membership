@@ -2,8 +2,10 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { genderLabel, type Member } from '@/lib/members/types'
+import { todayInSeoul } from '@/lib/memberships/status'
 import { setMemberStatus } from '../actions'
 import { EditMemberSection } from './edit-section'
+import { MembershipSection, type MembershipRow } from './membership-section'
 
 export default async function MemberDetailPage({
   params,
@@ -23,6 +25,15 @@ export default async function MemberDetailPage({
 
   const member = data as Member
   const isActive = member.status === 'active'
+
+  const { data: membershipData } = await supabase
+    .from('memberships')
+    .select('id, plan_code, plan_name, price, sessions_per_week, start_date, end_date')
+    .eq('member_id', member.id)
+    .order('end_date', { ascending: false })
+
+  const memberships = (membershipData ?? []) as MembershipRow[]
+  const today = todayInSeoul()
 
   async function toggleStatus() {
     'use server'
@@ -98,8 +109,14 @@ export default async function MemberDetailPage({
 
       <EditMemberSection member={member} />
 
+      <MembershipSection
+        memberId={member.id}
+        memberships={memberships}
+        today={today}
+      />
+
       <div className="mt-6 rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-400">
-        회원권 현황과 출석 이력은 Module 5·6에서 이 화면에 추가될 예정입니다.
+        출석 이력은 Module 6에서 이 화면에 추가될 예정입니다.
       </div>
     </main>
   )

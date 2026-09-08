@@ -1,6 +1,19 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { genderLabel, type Member } from '@/lib/members/types'
+import {
+  STATUS_LABEL,
+  describeMembership,
+  pickPrimaryMembership,
+  todayInSeoul,
+  type MembershipStatus,
+} from '@/lib/memberships/status'
+
+const MEMBERSHIP_BADGE: Record<MembershipStatus, string> = {
+  active: 'bg-green-50 text-green-700',
+  expiring_soon: 'bg-amber-50 text-amber-800',
+  expired: 'bg-gray-100 text-gray-500',
+}
 
 /** PostgREST `or` 필터에서 값 구분자로 쓰이는 문자를 제거해 필터 구문이 깨지지 않게 한다. */
 function sanitizeSearch(raw: string): string {
@@ -27,6 +40,29 @@ export default async function MembersPage({
 
   const { data, error } = await request
   const members = (data ?? []) as Member[]
+
+  // 회원별 대표 회원권(종료일이 가장 늦은 것)을 한 번의 조회로 가져온다 (N+1 방지)
+  const today = todayInSeoul()
+  const membershipsByMember = new Map<
+    string,
+    { end_date: string | null; sessions_per_week: number | null; plan_name: string | null }[]
+  >()
+
+  if (members.length > 0) {
+    const { data: membershipRows } = await supabase
+      .from('memberships')
+      .select('member_id, plan_name, end_date, sessions_per_week')
+      .in(
+        'member_id',
+        members.map((m) => m.id)
+      )
+
+    for (const row of membershipRows ?? []) {
+      const list = membershipsByMember.get(row.member_id) ?? []
+      list.push(row)
+      membershipsByMember.set(row.member_id, list)
+    }
+  }
 
   return (
     <main>
@@ -108,13 +144,19 @@ export default async function MembersPage({
               <tr>
                 <th className="px-4 py-3 font-medium">이름</th>
                 <th className="px-4 py-3 font-medium">연락처</th>
+                <th className="px-4 py-3 font-medium">회원권</th>
                 <th className="px-4 py-3 font-medium">성별</th>
-                <th className="px-4 py-3 font-medium">생년월일</th>
                 <th className="px-4 py-3 font-medium">상태</th>
               </tr>
             </thead>
             <tbody data-testid="member-rows">
-              {members.map((member) => (
+              {members.map((member) => {
+                const primary = pickPrimaryMembership(
+                  membershipsByMember.get(member.id) ?? []
+                )
+                const membership = primary ? describeMembership(primary, today) : null
+
+                return (
                 <tr key={member.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <Link
@@ -125,8 +167,21 @@ export default async function MembersPage({
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{member.phone}</td>
+                  <td className="px-4 py-3">
+                    {primary && membership ? (
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${MEMBERSHIP_BADGE[membership.status]}`}
+                        >
+                          {STATUS_LABEL[membership.status]}
+                        </span>
+                        <span className="text-xs text-gray-500">{primary.plan_name}</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">없음</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{genderLabel(member.gender)}</td>
-                  <td className="px-4 py-3 text-gray-600">{member.birth_date ?? '-'}</td>
                   <td className="px-4 py-3">
                     {member.status === 'active' ? (
                       <span className="rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
@@ -139,7 +194,8 @@ export default async function MembersPage({
                     )}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>

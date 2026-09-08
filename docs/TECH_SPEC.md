@@ -96,13 +96,34 @@ auth.users (Supabase 기본 제공)
 |---|---|---|
 | id | uuid (PK) | 기본키 |
 | member_id | uuid (FK → members.id) | 대상 회원 |
-| type | text | 'period' \| 'count' |
+| type | text | 'period' \| 'count' — 현재 운영 요금제는 모두 'period' |
 | start_date | date | 시작일 |
 | end_date | date | 종료일 (기간제) |
-| total_count | int | 총 횟수 (횟수제) |
-| remaining_count | int | 잔여 횟수 (횟수제) |
+| total_count | int | 총 횟수 (횟수제) — 현재 미사용 |
+| remaining_count | int | 잔여 횟수 (횟수제) — 현재 미사용 |
+| plan_code | text | 요금제 코드 (`M1_W3` 등). 아래 4.3절 참고 |
+| plan_name | text | 판매 시점 요금제 이름 **스냅샷** |
+| price | int | 판매 시점 가격(원) **스냅샷** |
+| sessions_per_week | int | 주간 이용 횟수 (3 또는 5) |
 | status | text | 'active' \| 'expiring_soon' \| 'expired' (조회 시 계산 또는 배치로 갱신) |
 | created_at | timestamptz | 등록일시 |
+
+> `plan_name`/`price`를 스냅샷으로 저장하는 이유: 나중에 요금이 인상되어도 과거 판매 기록은 당시 가격 그대로 남아야 하기 때문이다.
+
+### 4.3 요금제 (2026-09 기준 확정)
+
+피지컬그라운드가 실제 운영하는 요금제는 아래 4가지이며, 모두 **기간제 + 주간 이용 횟수** 조합이다.
+
+| 코드 | 이름 | 기간 | 주간 횟수 | 가격 |
+|---|---|---|---|---|
+| `M1_W3` | 1개월 주3회 | 1개월 | 3회 | 190,000원 |
+| `M1_W5` | 1개월 주5회 | 1개월 | 5회 | 210,000원 |
+| `M3_W3` | 3개월 주3회 | 3개월 | 3회 | 530,000원 |
+| `M3_W5` | 3개월 주5회 | 3개월 | 5회 | 590,000원 |
+
+- 요금제 목록은 자주 바뀌지 않으므로 **코드 상수(`lib/memberships/plans.ts`)로 관리**하고, 별도 관리 화면은 두지 않는다. 요금 변경 시에도 이미 판매된 회원권은 스냅샷 값을 유지한다.
+- 횟수권(10회권 등)·PT 등 다른 상품은 현재 취급하지 않는다. 추가 시 요금제를 DB 테이블로 승격하고 관리 화면을 두는 것을 검토한다.
+- **주간 횟수 초과 정책**: 이번 주 출석이 `sessions_per_week`를 넘어서면 **경고만 표시하고 체크인은 허용한다.** 현장 융통성을 위해 최종 판단은 직원에게 맡긴다. (5.1절)
 
 **attendances**
 
@@ -123,13 +144,15 @@ auth.users (Supabase 기본 제공)
 1. 직원이 회원 이름/연락처로 검색.
 2. 해당 회원의 활성 회원권 조회.
 3. 체크인 시 `attendances`에 레코드 생성.
-4. 회원권 타입이 `count`이면 `remaining_count`를 1 차감 (Supabase 트랜잭션 또는 Postgres 함수로 원자적 처리).
+4. 회원권 타입이 `count`이면 `remaining_count`를 1 차감 (현재 요금제에는 횟수제가 없어 해당 없음).
 5. 당일 중복 체크인 방지: 같은 회원의 당일 `checked_in_at`이 이미 있으면 경고 표시 후 재확인.
+6. **주간 횟수 초과 경고**: 이번 주(월~일) 출석 수가 회원권의 `sessions_per_week` 이상이면 경고를 표시한다. **차단하지는 않고** 직원이 확인 후 진행할 수 있다.
 
 ### 5.2 회원권 상태 판정
 
 - `period` 타입: `end_date < 오늘` → 만료, `end_date - 오늘 <= 7일` → 만료임박, 그 외 → 정상.
-- `count` 타입: `remaining_count <= 0` → 만료, `remaining_count <= 2` → 만료임박, 그 외 → 정상.
+- `count` 타입(현재 미사용): `remaining_count <= 0` → 만료, `remaining_count <= 2` → 만료임박, 그 외 → 정상.
+- 한 회원이 여러 회원권을 가질 수 있으므로(갱신·재등록), **가장 늦게 끝나는 활성 회원권**을 대표 상태로 본다.
 
 ### 5.3 대시보드 집계
 
