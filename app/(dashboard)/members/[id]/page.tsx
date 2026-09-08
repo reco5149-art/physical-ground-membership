@@ -2,10 +2,12 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { genderLabel, type Member } from '@/lib/members/types'
-import { todayInSeoul } from '@/lib/memberships/status'
+import { pickPrimaryMembership, todayInSeoul } from '@/lib/memberships/status'
+import { seoulWeekRange } from '@/lib/attendance/week'
 import { setMemberStatus } from '../actions'
 import { EditMemberSection } from './edit-section'
 import { MembershipSection, type MembershipRow } from './membership-section'
+import { AttendanceHistory, type AttendanceRecord } from './attendance-history'
 
 export default async function MemberDetailPage({
   params,
@@ -34,6 +36,32 @@ export default async function MemberDetailPage({
 
   const memberships = (membershipData ?? []) as MembershipRow[]
   const today = todayInSeoul()
+  const weekRange = seoulWeekRange(today)
+
+  const [
+    { data: attendanceData },
+    { count: totalAttendance },
+    { count: weekAttendance },
+  ] = await Promise.all([
+    supabase
+      .from('attendances')
+      .select('id, checked_in_at')
+      .eq('member_id', member.id)
+      .order('checked_in_at', { ascending: false })
+      .limit(20),
+    supabase
+      .from('attendances')
+      .select('id', { count: 'exact', head: true })
+      .eq('member_id', member.id),
+    supabase
+      .from('attendances')
+      .select('id', { count: 'exact', head: true })
+      .eq('member_id', member.id)
+      .gte('checked_in_at', weekRange.startUtc)
+      .lt('checked_in_at', weekRange.endUtc),
+  ])
+
+  const primaryMembership = pickPrimaryMembership(memberships)
 
   async function toggleStatus() {
     'use server'
@@ -115,9 +143,12 @@ export default async function MemberDetailPage({
         today={today}
       />
 
-      <div className="mt-6 rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-400">
-        출석 이력은 Module 6에서 이 화면에 추가될 예정입니다.
-      </div>
+      <AttendanceHistory
+        records={(attendanceData ?? []) as AttendanceRecord[]}
+        thisWeekCount={weekAttendance ?? 0}
+        sessionsPerWeek={primaryMembership?.sessions_per_week ?? null}
+        totalCount={totalAttendance ?? 0}
+      />
     </main>
   )
 }
