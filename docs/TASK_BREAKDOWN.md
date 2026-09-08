@@ -185,7 +185,7 @@ docs/PRD.md, docs/TECH_SPEC.md, docs/TASK_BREAKDOWN.md 의 Module <번호>,
 | 5 | 회원권 등록 및 상태 계산 | 완료 | [HANDOFF_05](./handoff/HANDOFF_05_membership-plans.md) |
 | 6 | 출석 체크 & 주간 횟수 경고 | 완료 | [HANDOFF_06](./handoff/HANDOFF_06_attendance.md) |
 | 7 | 대시보드 | 완료 | [HANDOFF_07](./handoff/HANDOFF_07_dashboard.md) |
-| 8 | 보안 체크리스트 적용 | 대기 | - |
+| 8 | 보안 체크리스트 적용 | 부분 완료 (코드·문서 완료 / 대시보드·SMTP·도메인은 운영자 수행 대기) | [HANDOFF_08](./handoff/HANDOFF_08_security.md) |
 | 9 | 배포 마무리 & 운영 준비 | 대기 | - |
 
 > 모듈을 완료할 때마다 이 표의 상태를 "완료"로 바꾸고 핸드오프 파일 링크를 채운다.

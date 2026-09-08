@@ -4,10 +4,23 @@ import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { hitRateLimit, RATE_LIMITS } from '@/lib/security/rate-limit'
 
 export type AuthFormState = {
   error?: string
   notice?: string
+}
+
+/**
+ * 요청 IP를 추정한다. Vercel/프록시 뒤에서는 원본 IP가 `x-forwarded-for`
+ * (쉼표로 구분된 목록의 첫 번째)에 담긴다. 신뢰할 수 없으면 rate limit이
+ * 무력화되지 않도록 공용 버킷('unknown')으로 묶는다.
+ */
+async function getClientIp(): Promise<string> {
+  const h = await headers()
+  const forwarded = h.get('x-forwarded-for')
+  if (forwarded) return forwarded.split(',')[0]!.trim()
+  return h.get('x-real-ip')?.trim() || 'unknown'
 }
 
 /**
@@ -37,6 +50,15 @@ export async function login(
 ): Promise<AuthFormState> {
   const { email, password } = getEmailAndPassword(formData)
   const redirectTo = safeRedirectPath(formData.get('redirectTo'))
+
+  // 무차별 로그인 시도 억제 (IP 기준). Supabase Auth 한도에 더해 앱에서 한 겹 더 막는다.
+  const rate = hitRateLimit(`login:${await getClientIp()}`, RATE_LIMITS.login)
+  if (!rate.allowed) {
+    const seconds = Math.ceil(rate.retryAfterMs / 1000)
+    return {
+      error: `로그인 시도가 너무 많습니다. ${seconds}초 후 다시 시도해주세요.`,
+    }
+  }
 
   // 서버 측 검증 — 브라우저 유효성 검사는 우회될 수 있으므로 여기서 다시 확인한다.
   if (!email || !password) {
@@ -68,6 +90,15 @@ export async function signup(
 ): Promise<AuthFormState> {
   const { email, password } = getEmailAndPassword(formData)
   const passwordConfirm = String(formData.get('passwordConfirm') ?? '')
+
+  // 봇에 의한 대량 가입 억제 (IP 기준).
+  const rate = hitRateLimit(`signup:${await getClientIp()}`, RATE_LIMITS.signup)
+  if (!rate.allowed) {
+    const seconds = Math.ceil(rate.retryAfterMs / 1000)
+    return {
+      error: `가입 시도가 너무 많습니다. ${seconds}초 후 다시 시도해주세요.`,
+    }
+  }
 
   if (!email || !password) {
     return { error: '이메일과 비밀번호를 모두 입력해주세요.' }
